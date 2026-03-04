@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+<style>
+  /* 1. GLOBAL RESET & LAYOUT */
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; background: #1e1e1e; color: #ccc; font-family: sans-serif; overflow: hidden; display: flex; flex-direction: column; }
+
+  /* Toolbar */
+  .toolbar { height: 40px; background: #252526; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #000; flex-shrink: 0; }
+  .btn { background: #0e639c; color: white; border: none; padding: 5px 10px; cursor: pointer; font-size: 11px; font-weight: bold; border-radius: 2px; }
+  .btn:hover { background: #1177bb; }
+
+  /* Workspace */
+  .workspace { display: flex; flex: 1; height: 100%; overflow: hidden; }
+  
+  /* Sidebar */
+  .sidebar { width: 180px; background: #252526; border-right: 1px solid #000; display: flex; flex-direction: column; }
+  .file-list { flex: 1; overflow-y: auto; }
+  .file-item { padding: 8px 10px; font-size: 12px; cursor: pointer; color: #aaa; display: flex; justify-content: space-between; }
+  .file-item.active { background: #37373d; color: #fff; border-left: 2px solid #09f; }
+  .del { color: #f44; visibility: hidden; font-weight: bold; padding: 0 5px; }
+  .file-item:hover .del { visibility: visible; }
+
+  /* Editor Group */
+  .editor-group { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .tabs { height: 35px; background: #2d2d2d; display: flex; border-bottom: 1px solid #000; }
+  .tab { padding: 0 15px; display: flex; align-items: center; font-size: 12px; cursor: pointer; color: #888; border-right: 1px solid #1e1e1e; }
+  .tab.active { background: #1e1e1e; color: #fff; border-top: 2px solid #09f; }
+
+  /* === PIXEL-PERFECT ALIGNMENT CSS === */
+  .code-container { 
+    position: relative; 
+    flex: 1; 
+    background: #1e1e1e; 
+    overflow: hidden; 
+  }
+
+
+  .editor-layer {
+    position: absolute; 
+    top: 0; left: 0; right: 0; bottom: 0;
+    padding: 10px !important;
+    margin: 0 !important;
+    border: 0 !important;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+    font-size: 14px !important;
+    line-height: 20px !important;
+    letter-spacing: 0px !important;
+    tab-size: 2;
+    white-space: pre !important; 
+    overflow: auto !important; 
+  }
+
+  #editor {
+    z-index: 2;
+    background: transparent;
+    color: transparent;
+    caret-color: #fff; 
+    resize: none; 
+    outline: none;
+  }
+  
+  #editor::selection { background: rgba(56, 125, 204, 0.4); color: transparent; }
+
+  #highlightLayer { z-index: 1; pointer-events: none; color: #d4d4d4; }
+  
+  /* Prism Fixes */
+  pre[class*="language-"] { margin: 0 !important; padding: 10px !important; background: transparent !important; }
+  code[class*="language-"] { font-family: inherit !important; }
+
+  /* Preview */
+  .resizer { width: 5px; background: #333; cursor: col-resize; }
+  .preview { width: 40%; background: #fff; display: flex; flex-direction: column; }
+  iframe { flex: 1; border: none; }
+  .console { height: 100px; background: #111; color: #ccc; padding: 10px; font-family: monospace; font-size: 11px; overflow-y: auto; border-top: 1px solid #444; }
+
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div style="font-weight:bold; color:#ffffff; margin-left:10px;">CODE EDITIOR V.1</div>
+  <div>
+    <button class="btn" style="background:#a33" onclick="stop()">STOP</button>
+    <button class="btn" onclick="run()">RUN ▶</button>
+    <button class="btn" style="background:#169c39" onclick="window.location.href='index.html'">HOME 🏠︎</button>
+  </div>
+</div>
+
+<div class="workspace">
+  <div class="sidebar">
+    <div style="padding:10px; font-size:11px; font-weight:bold; color:#666;">FILES</div>
+    <div id="fileList" class="file-list"></div>
+    <div style="padding:10px; border-top:1px solid #000;">
+        <button class="btn" style="width:100%; background:#333;" onclick="addPage()">+ New Page</button>
+        <button class="btn" style="width:100%; background:#a33; margin-top:5px;" onclick="resetProject()">Delete All Pages</button>
+    </div>
+  </div>
+
+  <div class="editor-group">
+    <div class="tabs">
+      <div class="tab" id="tab-html" onclick="setTab('html')">HTML</div>
+      <div class="tab" id="tab-css" onclick="setTab('css')">CSS</div>
+      <div class="tab" id="tab-js" onclick="setTab('js')">JS</div>
+    </div>
+    
+    <div class="code-container">
+      <textarea id="editor" class="editor-layer" spellcheck="false" 
+                oninput="handleInput()" onscroll="syncScroll()" onkeydown="handleKeys(event)"></textarea>
+      <pre id="highlightLayer" class="editor-layer"><code id="highlight" class="language-html"></code></pre>
+    </div>
+  </div>
+
+  <div class="resizer" id="resizer"></div>
+
+  <div class="preview" id="previewPane">
+    <iframe id="frame"></iframe>
+    <div class="console" id="console">System Ready.</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+
+<script>
+const STORAGE_KEY = 'Code_Editor_v47'; // New key for fresh start
+
+// DEFAULT PAGES
+const defaultPages = {
+    'intro': {
+      html: '<h1>Intro</h1>\n<p>This is a simple crash course to get you interested to code. At the end, try to make your own website.</p>\n\n<button onclick="window.location.href=\'addingtext\'">Start</button>',
+      css: 'body { font-family: sans-serif; padding: 20px; } button { padding: 10px 20px; cursor: pointer; }',
+      js: 'console.log("Home Ready");'
+    },
+    'addingtext': {
+      html: '<!doctype html>\n<body>\n   <h1>Adding Text</h1>\n   <p> To make text, using the "p" tag. Reminder that tags start with <> and end with "</>". Put any text between them. <br> Use the "br" tag or "\n" to make a line break. Try it out in the box </p>\n <textarea id="p" style="width:100%;height:25%;"></textarea>\n   <button onclick="check1()">Check</button>\n</body>\n<button onclick="window.location.href=\'makingheaders\'">Next Lesson</button>',
+      css: 'h1 { color: red; }',
+      js: 'const textarea = document.getElementById("p")\nconst searchText = "<p>" && "</p>"; \nfunction check1(){\n   if (textarea.value.includes(searchText)) {\n      console.log("Correct!")}\n      \n   else {\n      console.log("Try Again")}}'
+    },
+    'makingheaders': {
+      html: '<!doctype html>\n<body>\n   <h1>Adding Headers</h1>\n   <p>An header is text with a large and hard to miss font. Use the <strong>h1-h7</strong> tags 1 being the biggest and 7 being the smallest. Try it out in the box </p>\n <textarea id="h" style="width:100%;height:25%;"></textarea>\n   <button onclick="check1()">Check</button>\n</body>\n<button onclick="window.location.href=\'addinglinks\'">Next Lesson</button>',
+      css: 'h1 { color: red; }',
+      js: 'const textarea = document.getElementById("h")\nconst searchText = "<h1>" && "</h1>" || "<h2>" && "</h2>" || "<h3>" && "</h3>" || "<h4>" && "</h4>" || "<h5>" && "</h5>" || "<h6>" && "</h6>" || "<h7>" && "</h7>";\nfunction check1(){\n   if (textarea.value.includes(searchText)) {\n      console.log("Correct!")}\n      \n   else {\n      console.log("Try Again")}}'
+    },
+    'addinglinks': {
+      html: '<!doctype html>\n<body>\n   <h1>Adding Links</h1>\n   <p> To add links use the "a" tag. Inside the a tag, put you url inside the "" for external websites or put <strong>window.location.href=""</strong> and put your page name inside to switch between tabs. between the closing and opening tags, put the text that the url will stand for. Example: "<a href=\'google.com\'>Hi</a>"Try it out in the box </p>\n <textarea id="l" style="width:100%;height:25%;"></textarea>\n   <button onclick="check1()">Check</button>\n</body>\n<button onclick="window.location.href=\'addingbuttons\'">Next Lesson</button>',
+      css: 'h1 { color: red; }',
+      js: 'const textarea = document.getElementById("l")\nconst searchText = "<a href=\'\'>" && "</a>"; \nfunction check1(){\n   if (textarea.value.includes(searchText)) {\n      console.log("Correct!")}\n      \n   else {\n      console.log("Try Again")}}'
+    },
+    'addingbuttons': {
+      html: '<!doctype html>\n<body>\n   <h1>Adding Buttons</h1>\n   <p>Basically, the same as links but using the <strong>button</strong> tag with the command <strong>onclick=""</strong> then put the command you want inside. Example: <"button onclick="">HII<"/button> Try it out in the box </p>\n <textarea id="b" style="width:100%;height:25%;"></textarea>\n   <button onclick="check1()">Check</button>\n</body>\n<button onclick="window.location.href=\'addingbuttons\'">Next Lesson</button>',
+      css: 'h1 { color: red; }',
+      js: 'const textarea = document.getElementById("b")\nconst searchText = "<button onclick=\'\'">" && "</button>"; \nfunction check1(){\n   if (textarea.value.includes(searchText)) {\n      console.log("Correct!")}\n      \n   else {\n      console.log("Try Again")}}'
+    },
+    'basicstyle': {
+      html: '<h1>Styling</h1>\n<p>Look at the CSS tab!</p>',
+      css: 'body { background: #222; color: #fff; }',
+      js: ''
+    },
+    'basicscript': {
+      html: '<h1>Scripting</h1>\n<p>Check the console below.</p>',
+      css: '',
+      js: 'console.log("Hello from JavaScript!");'
+    },
+    'moreyoucanlearn': {
+      html: '<h1>Keep Learning!</h1>',
+      css: 'h1 { animation: glow 1s infinite alternate; } @keyframes glow { from { color: #fff; } to { color: #0ff; } }',
+      js: ''
+    }
+};
+
+let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+  activePage: 'intro',
+  activeTab: 'html',
+  pages: defaultPages
+};
+
+const editor = document.getElementById('editor');
+const highlightCode = document.getElementById('highlight');
+const highlightLayer = document.getElementById('highlightLayer');
+const frame = document.getElementById('frame');
+const con = document.getElementById('console');
+
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function render() {
+  const list = document.getElementById('fileList');
+  list.innerHTML = '';
+  Object.keys(state.pages).forEach(name => {
+    const div = document.createElement('div');
+    div.className = `file-item ${name === state.activePage ? 'active' : ''}`;
+    // Optimization: onclick="switchPage" is direct
+    div.innerHTML = `<span onclick="switchPage('${name}')" style="flex-grow:1">${name}</span><span class="del" onclick="delPage('${name}', event)">x</span>`;
+    list.appendChild(div);
+  });
+
+  ['html','css','js'].forEach(t => {
+    const el = document.getElementById(`tab-${t}`);
+    if(state.activeTab === t) el.classList.add('active');
+    else el.classList.remove('active');
+  });
+
+  editor.value = state.pages[state.activePage][state.activeTab] || '';
+  updateView();
+}
+
+function updateView() {
+  const lang = state.activeTab === 'js' ? 'javascript' : state.activeTab;
+  highlightCode.className = `language-${lang}`;
+  let text = editor.value;
+  if(text.endsWith('\n')) text += " ";
+  highlightCode.textContent = text;
+  Prism.highlightElement(highlightCode);
+}
+
+function handleInput() {
+  state.pages[state.activePage][state.activeTab] = editor.value;
+  updateView();
+  syncScroll();
+  save();
+}
+
+function syncScroll() {
+  highlightLayer.scrollTop = editor.scrollTop;
+  highlightLayer.scrollLeft = editor.scrollLeft;
+}
+
+function switchPage(name) {
+  if (state.activePage === name) return; // Optimization: Don't reload if already on page
+  state.activePage = name;
+  save();
+  render();
+  run();
+}
+
+function setTab(t) {
+  if (state.activeTab === t) return;
+  state.activeTab = t;
+  save();
+  render();
+}
+
+function addPage() {
+  const name = prompt("Page Name (no spaces):");
+  if(name) {
+      const cleanName = name.replace(/\s+/g, '');
+      if (!state.pages[cleanName]) {
+        state.pages[cleanName] = { html: `<h1>${cleanName}</h1>`, css: '', js: '' };
+        switchPage(cleanName);
+      } else {
+          alert("Page exists!");
+      }
+  }
+}
+
+function delPage(name, e) {
+  e.stopPropagation();
+  if(Object.keys(state.pages).length > 1 && confirm(`Delete ${name}?`)) {
+    delete state.pages[name];
+    if(state.activePage === name) state.activePage = Object.keys(state.pages)[0];
+    save();
+    render();
+    run();
+  }
+}
+
+// === NEW: RESET PROJECT FUNCTION ===
+function resetProject() {
+    if(confirm("⚠ ARE YOU SURE?\n\nThis will DELETE ALL your pages and reset the project to the default start.")) {
+        // Reset state to default
+        state.pages = JSON.parse(JSON.stringify(defaultPages)); // Deep copy defaults
+        state.activePage = 'intro';
+        save();
+        render();
+        run();
+        con.innerHTML += `<div style="color:yellow">System: Project Reset Complete.</div>`;
+    }
+}
+
+// === MEMORY LEAK FIX & RUNNER ===
+let currentUrl = null; // Store current Blob URL
+
+function run() {
+  const p = state.pages[state.activePage];
+  
+  // Magic Pre-Processor
+  let processedHtml = p.html.replace(
+    /window\.location\.href\s*=\s*['"]([^'"]+)['"]/g, 
+    "window.parent.postMessage({t:'nav', d:'$1'}, '*')"
+  );
+  
+  let processedJs = p.js.replace(
+    /window\.location\.href\s*=\s*['"]([^'"]+)['"]/g, 
+    "window.parent.postMessage({t:'nav', d:'$1'}, '*')"
+  );
+
+  const bridge = `
+    <script>
+      window.onerror = (m) => window.parent.postMessage({t:'err', m}, '*');
+      console.log = (d) => window.parent.postMessage({t:'log', d}, '*');
+      window.addEventListener('click', e => {
+        const a = e.target.closest('a');
+        if(a && !a.href.startsWith('http')) {
+          e.preventDefault();
+          window.parent.postMessage({t:'nav', d: a.getAttribute('href')}, '*');
+        }
+      }, true);
+    <\/script>`;
+  
+  const doc = `<!DOCTYPE html><html><head><style>${p.css}</style></head><body>${processedHtml}${bridge}<script>try{${processedJs}}catch(e){console.log(e)}<\/script></body></html>`;
+  
+  // SPEED FIX: Revoke old URL before creating new one
+  if (currentUrl) URL.revokeObjectURL(currentUrl);
+  currentUrl = URL.createObjectURL(new Blob([doc], {type: 'text/html'}));
+  frame.src = currentUrl;
+}
+
+function stop() { frame.src = 'about:blank'; }
+
+window.addEventListener('message', e => {
+  if(e.data.t === 'log') con.innerHTML += `<div>> ${e.data.d}</div>`;
+  if(e.data.t === 'err') con.innerHTML += `<div style="color:#f44">Error: ${e.data.m}</div>`;
+  if(e.data.t === 'nav') {
+    if (state.pages[e.data.d]) {
+        switchPage(e.data.d);
+    } else {
+        con.innerHTML += `<div style="color:#f44">Error: Page '${e.data.d}' not found.</div>`;
+    }
+  }
+  con.scrollTop = con.scrollHeight;
+});
+
+function handleKeys(e) {
+  if(e.key === 'Tab') {
+    e.preventDefault();
+    const s = editor.selectionStart;
+    editor.value = editor.value.substring(0, s) + '  ' + editor.value.substring(editor.selectionEnd);
+    editor.selectionStart = editor.selectionEnd = s + 2;
+    handleInput();
+  }
+}
+
+// Resizer
+const resizer = document.getElementById('resizer');
+const previewPane = document.getElementById('previewPane');
+let resizing = false;
+resizer.onmousedown = () => resizing = true;
+document.onmouseup = () => resizing = false;
+document.onmousemove = e => {
+  if(resizing) previewPane.style.width = (document.body.offsetWidth - e.clientX) + 'px';
+};
+
+render();
+run();
+</script>
+</body>
+</html>
