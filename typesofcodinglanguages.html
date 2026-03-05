@@ -108,7 +108,26 @@
     </style>
     <script>
     // JavaScript function to handle the toggling
+    function hideall() {
+        var x = document.getElementById("O");
+        var y = document.getElementById("L");
+        var z = document.getElementById("S");
+        var a = document.getElementById("D");
+        var b = document.getElementById("F");
+        var c = document.getElementById("M");
+        var d = document.getElementById("P");
+        x.style.display = "none";
+        y.style.display = "none";
+        z.style.display = "none";
+        a.style.display = "none";
+        b.style.display = "none";
+        c.style.display = "none";
+        d.style.display = "none";
+
+
+    }
     function hide1() {
+        hideall();
         var x = document.getElementById("O");
             if (x.style.display === "none") {
                 x.style.display = "block"; // Show the element
@@ -117,6 +136,7 @@
             }
         }
     function hide2() {
+        hideall();
         var x = document.getElementById("L");
             if (x.style.display === "none") {
                 x.style.display = "block"; // Show the element
@@ -125,6 +145,7 @@
             }
         }
     function hide3() {
+        hideall();
         var x = document.getElementById("S");
             if (x.style.display === "none") {
                 x.style.display = "block"; // Show the element
@@ -133,6 +154,7 @@
             }
         }
     function hide4() {
+        hideall();
         var x = document.getElementById("D");
             if (x.style.display === "none") {
                 x.style.display = "block"; // Show the element
@@ -141,6 +163,7 @@
             }
         }
     function hide5() {
+        hideall();
         var x = document.getElementById("F");
             if (x.style.display === "none") {
                 x.style.display = "block"; // Show the element
@@ -149,6 +172,7 @@
             }
         }
     function hide6() {
+        hideall();
         var x = document.getElementById("M");
             if (x.style.display === "none") {
                 x.style.display = "block"; // Show the element
@@ -157,6 +181,7 @@
             }
         }
     function hide7() {
+        hideall();
         var x = document.getElementById("P");
             if (x.style.display === "none") {
                 x.style.display = "block"; // Show the element
@@ -164,7 +189,6 @@
                 x.style.display = "none"; // Hide the element
             }
         }
-
 
 
         // const BIN_ID = "69a8a8f9ae596e708f5fbd0b"; // Replace with your Bin ID
