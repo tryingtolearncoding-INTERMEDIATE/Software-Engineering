@@ -1,10 +1,10 @@
-<?php
-if (isset($_POST['question'])) {
-    $new_content = $_POST['question'];
+// <?php
+// if (isset($_POST['question'])) {
+//     $new_content = $_POST['question'];
     
-    file_put_contents('questions.txt', $new_content);
+//     file_put_contents('questions.txt', $new_content);
     
-    header('Location: typesofcodinglanguages.php');
-    exit();
-}
-?>
+//     header('Location: typesofcodinglanguages.php');
+//     exit();
+// }
+// ?>
