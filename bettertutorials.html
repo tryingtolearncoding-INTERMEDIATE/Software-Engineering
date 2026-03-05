@@ -4,19 +4,15 @@
 <meta charset="UTF-8">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
 <style>
-  /* 1. GLOBAL RESET & LAYOUT */
   * { box-sizing: border-box; }
   body { margin: 0; height: 100vh; background: #1e1e1e; color: #ccc; font-family: sans-serif; overflow: hidden; display: flex; flex-direction: column; }
 
-  /* Toolbar */
   .toolbar { height: 40px; background: #252526; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #000; flex-shrink: 0; }
   .btn { background: #0e639c; color: white; border: none; padding: 5px 10px; cursor: pointer; font-size: 11px; font-weight: bold; border-radius: 2px; }
   .btn:hover { background: #1177bb; }
 
-  /* Workspace */
   .workspace { display: flex; flex: 1; height: 100%; overflow: hidden; }
   
-  /* Sidebar */
   .sidebar { width: 180px; background: #252526; border-right: 1px solid #000; display: flex; flex-direction: column; }
   .file-list { flex: 1; overflow-y: auto; }
   .file-item { padding: 8px 10px; font-size: 12px; cursor: pointer; color: #aaa; display: flex; justify-content: space-between; }
@@ -24,13 +20,11 @@
   .del { color: #f44; visibility: hidden; font-weight: bold; padding: 0 5px; }
   .file-item:hover .del { visibility: visible; }
 
-  /* Editor Group */
   .editor-group { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   .tabs { height: 35px; background: #2d2d2d; display: flex; border-bottom: 1px solid #000; }
   .tab { padding: 0 15px; display: flex; align-items: center; font-size: 12px; cursor: pointer; color: #888; border-right: 1px solid #1e1e1e; }
   .tab.active { background: #1e1e1e; color: #fff; border-top: 2px solid #09f; }
-
-  /* === PIXEL-PERFECT ALIGNMENT CSS === */
+  
   .code-container { 
     position: relative; 
     flex: 1; 
@@ -66,12 +60,10 @@
   #editor::selection { background: rgba(56, 125, 204, 0.4); color: transparent; }
 
   #highlightLayer { z-index: 1; pointer-events: none; color: #d4d4d4; }
-  
-  /* Prism Fixes */
+
   pre[class*="language-"] { margin: 0 !important; padding: 10px !important; background: transparent !important; }
   code[class*="language-"] { font-family: inherit !important; }
 
-  /* Preview */
   .resizer { width: 5px; background: #333; cursor: col-resize; }
   .preview { width: 40%; background: #fff; display: flex; flex-direction: column; }
   iframe { flex: 1; border: none; }
@@ -127,9 +119,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
 
 <script>
-const STORAGE_KEY = 'Code_Editor_v47'; // New key for fresh start
+const STORAGE_KEY = 'Code_Editor_v47'; 
 
-// DEFAULT PAGES
+
 const defaultPages = {
     'intro': {
       html: '<h1>Intro</h1>\n<p>This is a simple crash course to get you interested to code. At the end, try to make your own website.</p>\n\n<button onclick="window.location.href=\'addingtext\'">Start</button>',
@@ -193,7 +185,6 @@ function render() {
   Object.keys(state.pages).forEach(name => {
     const div = document.createElement('div');
     div.className = `file-item ${name === state.activePage ? 'active' : ''}`;
-    // Optimization: onclick="switchPage" is direct
     div.innerHTML = `<span onclick="switchPage('${name}')" style="flex-grow:1">${name}</span><span class="del" onclick="delPage('${name}', event)">x</span>`;
     list.appendChild(div);
   });
@@ -280,14 +271,11 @@ function resetProject() {
         con.innerHTML += `<div style="color:yellow">System: Project Reset Complete.</div>`;
     }
 }
-
-// === MEMORY LEAK FIX & RUNNER ===
-let currentUrl = null; // Store current Blob URL
+let currentUrl = null; 
 
 function run() {
   const p = state.pages[state.activePage];
   
-  // Magic Pre-Processor
   let processedHtml = p.html.replace(
     /window\.location\.href\s*=\s*['"]([^'"]+)['"]/g, 
     "window.parent.postMessage({t:'nav', d:'$1'}, '*')"
@@ -344,7 +332,7 @@ function handleKeys(e) {
   }
 }
 
-// Resizer
+
 const resizer = document.getElementById('resizer');
 const previewPane = document.getElementById('previewPane');
 let resizing = false;
