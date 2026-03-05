@@ -313,15 +313,8 @@
     </div>
 
     
-    <div id="content">Loading text...</div>
-        <script>
-          fetch('questions.txt')
-            .then(response => response.text())
-            .then(data => {
-              document.getElementById('content').innerText = data;
-            })
-            .catch(error => console.error('Error loading file:', error));
-        </script>
+    
+    <embed src="questions.txt" width="500" height="300">
 
     </body>
 </html>
